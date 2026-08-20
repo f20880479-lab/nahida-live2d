@@ -1,0 +1,255 @@
+/* ============ 纳西妲 · 与你相识 ============ */
+:root {
+  --nahida-green: #2f9e6e;
+  --nahida-dark: #0c241c;
+  --nahida-leaf: #2f7d5a;
+  --nahida-mint: #e8f6e4;
+  --nahida-gold: #e8c46a;
+  --glass-bg: rgba(8, 26, 20, 0.72);
+  --night: 0;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
+
+#scene-wrap {
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    /* 上浅下深的罩层:压一压高光,让立绘与 UI 更突出(底部稍深,像舞台打光) */
+    linear-gradient(to top, rgba(3, 15, 9, 0.45) 0%, rgba(3, 15, 9, 0.10) 28%, rgba(3, 15, 9, 0.16) 60%, rgba(3, 15, 9, 0.32) 100%),
+    /* 精致森林背景图(油画风:阳光穿过树冠 + 漂浮光点),与人物精细度同调 */
+    url('/bg/nahida-forest.jpg') center / cover no-repeat,
+    /* 兜底渐变:图片未加载/失败时的底色,避免白屏 */
+    radial-gradient(ellipse at 50% 28%, #2e5b45 0%, #1a3d2e 42%, #0b2017 100%);
+  transition: background 1.2s ease;
+  overflow: hidden;
+}
+/* 流动的梦境光斑(暖金 / 柔白,缓慢漂移)——叠在须弥雨林图上,像穿过树冠的日光微尘 */
+#scene-wrap::before {
+  content: ''; position: absolute; inset: -10%;
+  background:
+    radial-gradient(38% 42% at 24% 34%, rgba(255, 248, 214, 0.14), transparent 68%),
+    radial-gradient(44% 48% at 76% 38%, rgba(255, 255, 240, 0.12), transparent 70%),
+    radial-gradient(30% 34% at 62% 78%, rgba(255, 232, 170, 0.10), transparent 70%),
+    radial-gradient(26% 30% at 40% 62%, rgba(214, 255, 228, 0.10), transparent 70%);
+  animation: aurora 16s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes aurora {
+  0%   { opacity: .2; transform: translate3d(-1.2%, -0.8%, 0) scale(1); }
+  50%  { opacity: .38; transform: translate3d(1.4%, 0.6%, 0) scale(1.07); }
+  100% { opacity: .24; transform: translate3d(-0.6%, 1.2%, 0) scale(1.04); }
+}
+/* 夜晚面纱:只盖住背景(森林图 + 光斑),不压暗 Live2D 人物;夜晚模式平滑过渡 */
+#scene-wrap::after {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 30%, rgba(18, 38, 58, 0.55), rgba(4, 12, 22, 0.82));
+  opacity: 0; transition: opacity 1.2s ease;
+}
+body.night #scene-wrap::after { opacity: 1; }
+body.night #scene-wrap::before {
+  background:
+    radial-gradient(38% 42% at 26% 32%, rgba(150, 210, 235, 0.14), transparent 68%),
+    radial-gradient(44% 48% at 74% 40%, rgba(130, 200, 230, 0.10), transparent 70%),
+    radial-gradient(30% 34% at 60% 76%, rgba(220, 210, 180, 0.10), transparent 70%);
+}
+#stage { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+/* Live2D 2D 二次元模式画布(盖在 3D 画布上) */
+#live2d-stage { position: absolute; inset: 0; pointer-events: none; }
+#live2d-stage canvas { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; }
+#stage.hidden3d { display: none; }
+
+/* ---------- 摄像头面板(左下角) ---------- */
+#cam-panel {
+  position: absolute; left: 14px; bottom: 14px; z-index: 40;
+  width: 280px; max-width: calc(100vw - 28px);
+  border-radius: 12px; overflow: hidden;
+  border: 1px solid rgba(126,252,154,.35);
+  box-shadow: 0 8px 28px rgba(0,0,0,.5);
+  background: rgba(8,26,20,.55);
+  backdrop-filter: blur(6px);
+  animation: camIn .3s ease;
+}
+@keyframes camIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: none;} }
+#cam-panel canvas { display: block; width: 100%; height: auto; }
+#cam-panel .cam-label {
+  padding: 5px 10px; font-size: 12px; color: rgba(232,246,228,.9);
+  text-align: center; background: rgba(8,26,20,.75);
+}
+#cam-video { display: none; }
+
+/* ---------- 顶栏 ---------- */
+#stage-overlay { position: absolute; inset: 0; pointer-events: none; }
+#top-bar {
+  position: absolute; top: 0; left: 0; right: 0;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 22px; pointer-events: auto;
+}
+.brand {
+  color: var(--nahida-mint); font-size: 16px; letter-spacing: 2px;
+  text-shadow: 0 2px 12px rgba(0,0,0,.6);
+  background: var(--glass-bg); border: 1px solid rgba(232,196,106,.25);
+  border-radius: 999px; padding: 8px 18px; backdrop-filter: blur(8px);
+}
+.brand-emoji { margin-right: 4px; }
+.top-actions { display: flex; gap: 8px; }
+.icon-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 1px solid rgba(232,196,106,.35);
+  background: var(--glass-bg); color: var(--nahida-mint);
+  font-size: 17px; cursor: pointer; backdrop-filter: blur(8px);
+  transition: all .25s; line-height: 1;
+}
+.icon-btn:hover { transform: scale(1.1); border-color: var(--nahida-gold); color: var(--nahida-gold); }
+.icon-btn.active { background: var(--nahida-gold); color: #0c241c; }
+
+/* ---------- 状态/泡泡 ---------- */
+#status-line {
+  position: absolute; bottom: 26%; left: 50%; transform: translateX(-50%);
+  color: rgba(232,246,228,.75); font-size: 14px; letter-spacing: 1px;
+  text-shadow: 0 2px 8px rgba(0,0,0,.7); transition: opacity .6s;
+}
+#speech-bubble {
+  position: absolute; top: 13%; left: 50%; transform: translateX(-50%);
+  max-width: 46vw; padding: 14px 22px;
+  background: rgba(10, 32, 24, .82); border: 1px solid rgba(232,196,106,.4);
+  color: var(--nahida-mint); border-radius: 16px; font-size: 15px; line-height: 1.7;
+  backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  opacity: 0; transition: opacity .5s, transform .5s; transform: translateX(-50%) translateY(8px);
+}
+#speech-bubble.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#thinking-dot { position: absolute; top: 13%; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; padding: 12px 18px; background: rgba(10,32,24,.8); border-radius: 999px; }
+#thinking-dot span { width: 8px; height: 8px; border-radius: 50%; background: var(--nahida-gold); animation: dot 1s infinite ease-in-out; }
+#thinking-dot span:nth-child(2) { animation-delay: .2s; } #thinking-dot span:nth-child(3) { animation-delay: .4s; }
+@keyframes dot { 0%,100% { opacity:.25; transform: translateY(0);} 50% { opacity:1; transform: translateY(-5px);} }
+
+.hidden { display: none !important; }
+
+/* ---------- 聊天面板(半透明微信风格) ---------- */
+#chat-panel {
+  position: absolute; right: 16px; bottom: 16px; width: 360px; max-width: calc(100vw - 32px);
+  height: 500px; max-height: 80vh;
+  background: rgba(240, 240, 240, 0.58);
+  border: 1px solid rgba(255,255,255,.35);
+  border-radius: 12px;
+  backdrop-filter: blur(18px) saturate(1.3);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,.45);
+  transition: height .3s ease, opacity .3s;
+}
+#chat-panel.minimized { height: 44px; }
+#chat-panel.minimized #chat-messages, #chat-panel.minimized #chat-input-row { display: none; }
+#chat-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; color: #3a3a3a; font-size: 15px; font-weight: 600; letter-spacing: 1px;
+  background: rgba(235, 235, 235, 0.65);
+  border-bottom: 1px solid rgba(0,0,0,.06); cursor: pointer; flex-shrink: 0;
+  user-select: none;
+}
+#chat-header .icon-btn {
+  width: 26px; height: 26px; font-size: 15px; border-radius: 6px;
+  background: rgba(255,255,255,.5); border: none; color: #555;
+}
+#chat-messages { flex: 1; overflow-y: auto; padding: 14px 14px 8px; scroll-behavior: smooth; }
+#chat-messages::-webkit-scrollbar { width: 5px; }
+#chat-messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,.18); border-radius: 3px; }
+
+/* 微信式居中系统消息(关系阶段等) */
+.sys-divider {
+  text-align: center; font-size: 12px; color: rgba(90,90,90,.85);
+  padding: 4px 0 10px; user-select: none;
+}
+
+.msg { display: flex; margin-bottom: 14px; animation: msgIn .25s ease; }
+@keyframes msgIn { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: none;} }
+.msg .avatar {
+  width: 36px; height: 36px; border-radius: 6px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 19px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+}
+.msg .bubble {
+  max-width: 72%; padding: 8px 12px; border-radius: 6px;
+  font-size: 15px; line-height: 1.5; word-break: break-word;
+  box-shadow: 0 1px 2px rgba(0,0,0,.08); position: relative;
+}
+.msg.user { justify-content: flex-end; }
+.msg.user .avatar { order: 2; margin-left: 10px; background: rgba(140,180,255,.35); }
+.msg.user .bubble { background: rgba(149, 236, 105, 0.88); color: #111; }
+.msg.hutao .avatar { margin-right: 10px; background: rgba(120,190,150,.35); }
+.msg.hutao .bubble { background: rgba(255, 255, 255, 0.82); color: #222; }
+.msg .emotion-tag { font-size: 11px; color: rgba(0,0,0,.35); margin-top: 3px; }
+
+#chat-input-row {
+  display: flex; gap: 8px; align-items: center; padding: 10px 12px;
+  background: rgba(240, 240, 240, 0.72);
+  border-top: 1px solid rgba(0,0,0,.06); flex-shrink: 0;
+}
+#chat-input {
+  flex: 1; min-width: 0; padding: 9px 12px; border-radius: 6px;
+  border: 1px solid rgba(0,0,0,.08); background: rgba(255,255,255,.85);
+  color: #222; font-size: 15px; outline: none; transition: border-color .3s, box-shadow .3s;
+}
+#chat-input:focus { border-color: #07C160; box-shadow: 0 0 0 2px rgba(7,193,96,.15); }
+#chat-input::placeholder { color: rgba(0,0,0,.3); }
+.send-btn {
+  padding: 8px 18px; border-radius: 6px; border: none; cursor: pointer;
+  background: #07C160; color: #fff;
+  font-size: 15px; letter-spacing: 1px; transition: all .2s; flex-shrink: 0;
+}
+.send-btn:hover { background: #06ad56; }
+#chat-input-row .icon-btn {
+  width: 38px; height: 38px; border-radius: 8px;
+  background: rgba(255,255,255,.6); border: 1px solid rgba(0,0,0,.08);
+  color: #555; font-size: 16px;
+}
+#btn-mic.listening { background: #e74c3c !important; color: #fff !important; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(231,76,60,.6);} 50% { box-shadow: 0 0 0 10px rgba(231,76,60,0);} }
+
+/* ---------- 设置 ---------- */
+#settings-modal { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.45); backdrop-filter: blur(4px); z-index: 50; }
+.modal-card {
+  width: 340px; padding: 26px; border-radius: 18px;
+  background: rgba(10,32,24,.95); border: 1px solid rgba(232,196,106,.35);
+  color: var(--nahida-mint);
+}
+.modal-card h3 { margin-bottom: 18px; letter-spacing: 2px; color: var(--nahida-gold); }
+.modal-card label { display: block; font-size: 13px; opacity: .85; margin: 14px 0 6px; }
+.modal-card input[type=text] {
+  width: 100%; padding: 9px 12px; border-radius: 8px; font-size: 14px;
+  border: 1px solid rgba(232,196,106,.35); background: rgba(4,20,14,.6); color: var(--nahida-mint); outline: none;
+}
+.switch-row { display: flex !important; justify-content: space-between; align-items: center; }
+.switch-row input { display: none; }
+.switch {
+  width: 42px; height: 22px; border-radius: 999px; background: rgba(255,255,255,.15);
+  position: relative; transition: background .3s; cursor: pointer;
+}
+.switch::after {
+  content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
+  border-radius: 50%; background: #fff; transition: left .3s;
+}
+.switch-row input:checked + .switch { background: var(--nahida-gold); }
+.switch-row input:checked + .switch::after { left: 23px; }
+.modal-hint { margin-top: 16px; font-size: 12px; opacity: .7; }
+.modal-actions { margin-top: 20px; text-align: right; }
+.modal-actions button {
+  padding: 8px 24px; border-radius: 999px; border: none; cursor: pointer;
+  background: linear-gradient(135deg, #2f9e6e, #1c6b4a); color: #fff; font-size: 14px;
+}
+
+/* ---------- Toast ---------- */
+#toast {
+  position: absolute; left: 50%; bottom: 24%; transform: translateX(-50%);
+  padding: 10px 20px; border-radius: 999px; font-size: 13px; color: var(--nahida-mint);
+  background: rgba(10,32,24,.9); border: 1px solid rgba(232,196,106,.4);
+  z-index: 60; opacity: 0; transition: opacity .4s;
+}
+#toast.show { opacity: 1; }
+
+/* 消息里的小表情 */
+.msg .bubble .hutao-em { font-size: 13px; }
+
+@media (max-width: 640px) {
+  #chat-panel { width: calc(100vw - 24px); right: 12px; bottom: 12px; }
+  #speech-bubble { max-width: 82vw; }
+}

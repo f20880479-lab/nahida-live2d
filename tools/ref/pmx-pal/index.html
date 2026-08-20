@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' pmxpal: 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: pmxpal:; connect-src 'self' pmxpal:; worker-src 'self' blob:"
+    />
+    <title>PMX Pal</title>
+  </head>
+  <body>
+    <div id="app">
+      <div id="menu-reveal" aria-hidden="true"></div>
+      <button id="window-move-handle" type="button" title="ドラッグしてウインドウを移動" aria-label="ウインドウを移動">✥</button>
+      <header class="toolbar" aria-label="PMX Palの操作">
+        <div class="drag-handle" title="ドラッグして移動">
+          <span class="app-mark">P</span>
+          <span id="model-name">PMX Pal</span>
+        </div>
+        <div class="toolbar-actions">
+          <button id="file-menu" type="button" title="モデルまたは動作を選択">ファイル</button>
+          <button id="lock-model" type="button" title="操作モードを変更">移動</button>
+          <button id="gaze-mode" type="button" title="目線モードを変更">目線なし</button>
+          <button id="physics" type="button" title="MMD物理演算を準備中" aria-pressed="false" disabled>物理</button>
+          <button id="idle-motion" type="button" title="待機モーション" aria-pressed="true">待機</button>
+          <button id="pin-window" type="button" title="常に手前に表示" aria-pressed="true">前面</button>
+          <button id="menu" type="button" class="icon-button" title="メニュー" aria-label="メニュー">•••</button>
+          <button id="close" type="button" class="icon-button close-button" title="閉じる" aria-label="閉じる">×</button>
+        </div>
+      </header>
+      <main id="stage">
+        <div id="empty-state">
+          <div class="empty-card">
+            <div class="empty-icon">PMX</div>
+            <h1>モデルを呼び出しましょう</h1>
+            <p>PMXファイルを選ぶと、ここにマスコットが表示されます。</p>
+            <button id="empty-open-model" type="button">PMXモデルを選択</button>
+          </div>
+        </div>
+        <div id="status" role="status" aria-live="polite"></div>
+      </main>
+      <button id="resize-handle" type="button" title="ドラッグしてウインドウサイズを変更" aria-label="ウインドウサイズを変更"></button>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

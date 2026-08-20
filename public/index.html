@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>纳西妲 · 与你相识</title>
+<link rel="stylesheet" href="/style.css?v=20260826b">
+<script type="importmap">
+{
+  "imports": {
+    "three": "/vendor/three",
+    "three/addons/": "/vendor/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="scene-wrap">
+  <div id="live2d-stage"></div>
+
+  <div id="stage-overlay">
+    <div id="top-bar">
+      <div class="brand"><span class="brand-emoji">🍃</span> 纳西妲 · 与你相识</div>
+      <div class="top-actions">
+        <button id="btn-music" class="icon-btn" title="背景音乐">♪</button>
+        <button id="btn-night" class="icon-btn" title="夜晚模式">☾</button>
+        <button id="btn-cam" class="icon-btn" title="摄像头(识别你的情绪)">📷</button>
+        <button id="btn-settings" class="icon-btn" title="设置">⚙</button>
+      </div>
+    </div>
+    <div id="speech-bubble" class="hidden"></div>
+    <div id="status-line">正在唤醒纳西妲…</div>
+    <div id="thinking-dot" class="hidden"><span></span><span></span><span></span></div>
+  </div>
+
+  <div id="chat-panel">
+    <div id="chat-header">
+      <span class="chat-title">💬 和纳西妲聊天</span>
+      <button id="btn-chat-min" class="icon-btn" title="收起聊天">–</button>
+    </div>
+    <div id="chat-messages"></div>
+    <div id="chat-input-row">
+      <button id="btn-mic" class="icon-btn" title="语音输入">🎤</button>
+      <input id="chat-input" type="text" placeholder="和纳西妲说点什么…" autocomplete="off" maxlength="500">
+      <button id="btn-send" class="send-btn">发送</button>
+    </div>
+  </div>
+
+  <div id="settings-modal" class="hidden">
+    <div class="modal-card">
+      <h3>⚙ 设置</h3>
+      <label>她对你的称呼</label>
+      <input id="set-nick" type="text" placeholder="亲爱的" maxlength="12">
+      <label class="switch-row"><span>语音播报(Edge 神经网络)</span><input type="checkbox" id="set-voice" checked><span class="switch"></span></label>
+      <label class="switch-row"><span>背景音乐</span><input type="checkbox" id="set-music"><span class="switch"></span></label>
+      <label class="switch-row"><span>夜晚模式</span><input type="checkbox" id="set-night"><span class="switch"></span></label>
+      <div class="modal-hint">大脑状态:<span id="brain-state">检测中…</span></div>
+      <div class="modal-actions">
+        <button id="btn-settings-close">好的</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="hidden"></div>
+
+  <!-- 摄像头面板:左下角显示"她眼中的你"(镜像 + 人脸框 + 情绪/动作标签) -->
+  <div id="cam-panel" class="hidden">
+    <canvas id="cam-canvas" width="280" height="210"></canvas>
+    <div class="cam-label">📷 摄像头 · 情绪识别 <span id="cam-hint"></span></div>
+  </div>
+  <video id="cam-video" autoplay muted playsinline class="hidden"></video>
+</div>
+<!-- 摄像头视觉:人脸检测 + 情绪识别(face-api.js) -->
+<script src="/vendor/face-api/face-api.js"></script>
+<script src="/camera.js"></script>
+<!-- Live2D 技术栈(pixi-live2d-display Cubism4 专用构建,参考 anime-desktop-pet) -->
+<script src="/vendor/live2d/live2dcubismcore.min.js"></script>
+<script src="/vendor/live2d/pixi.min.js"></script>
+<script src="/vendor/live2d/pixi-live2d-display-cubism4.min.js"></script>
+<script src="/live2d.js"></script>
+<!-- ?v= 版本号:强制刷新缓存 -->
+<script type="module" src="/app.js?v=20260413e"></script>
+</body>
+</html>
